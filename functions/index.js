@@ -30,3 +30,29 @@ exports.onDeleteUserAccountClearDatabase = functions.auth.user().onDelete(event 
         return file.delete()
     }
 })
+
+exports.onNewNotificationCreate = functions.database.ref('/notifications/{id}').onWrite(event => {
+    if (!event.data.exists()) {
+        return
+    }
+
+    const notification = event.data.val()
+    const payload = {
+        notification: {
+            title: notification.title,
+            body: notification.message,
+            icon: 'ic_notification',
+            color: '#F2A900'
+        },
+        data: {
+            usuario: notification.usuario,
+            photoUrl: notification.photoUrl
+        }
+    };
+
+    admin.messaging().sendToTopic('all', payload).then(function(response) {
+        console.log("Successfully sent message:", response)
+    }).catch(function(error) {
+        console.log("Error sending message:", error)
+    });
+})
